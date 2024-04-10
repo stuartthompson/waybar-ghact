@@ -18,7 +18,6 @@ jobs:
       - name: Install Rust toolchain
         uses: moonrepo/setup-rust@v1
         with:
-            cache-base: main
             components: rustfmt, clippy
             channel: stable
       - name: Lint
