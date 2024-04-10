@@ -25,10 +25,7 @@ fn main() -> Result<()> {
     let repo = "table-format";
     let workflow_id = "ci.yml";
 
-    let url = format!(
-        "https://api.github.com/repos/{}/{}/actions/workflows/{}/runs",
-        owner, repo, workflow_id
-    );
+    let url = format!("https://api.github.com/repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs");
 
     let client = reqwest::blocking::Client::new();
     let mut response = client.get(url)
@@ -39,7 +36,7 @@ fn main() -> Result<()> {
 
     let status: ActionsStatus = serde_json::from_str(&body)?;
 
-    println!("Runs: {:?}", status);
+    println!("Runs: {status:?}");
     println!("Total workflow runs: {}", status.workflow_runs.len());
     println!("Status: {}", status.workflow_runs[0].status);
 
