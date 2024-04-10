@@ -16,10 +16,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: moonrepo/setup-rust@v1
         with:
-            toolchain: stable
+            cache-base: main
             components: rustfmt, clippy
+            channel: stable
       - name: Lint
         run: cargo clippy -- -Dclippy::all -Dclippy::pedantic
 
