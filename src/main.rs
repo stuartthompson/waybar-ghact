@@ -37,15 +37,11 @@ fn main() -> Result<()> {
     let mut body = String::new();
     response.read_to_string(&mut body)?;
 
-    let actions_status: ActionsStatus = serde_json::from_str(&body)?;
+    let status: ActionsStatus = serde_json::from_str(&body)?;
 
-    println!("Status: {}", actions_status.workflow_runs[0].status);
-
-    // println!("Response: {}", body);
-    //println!("Total Workflow Runs: {}", response.total_count);
-    // for run in response.workflow_runs {
-    //    println!("ID: {}, Status: {}, Conclusion: {:?}", run.id, run.status, run.conclusion);
-    // }
+    println!("Runs: {:?}", status);
+    println!("Total workflow runs: {}", status.workflow_runs.len());
+    println!("Status: {}", status.workflow_runs[0].status);
 
     Ok(())
 }
