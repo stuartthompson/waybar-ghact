@@ -1,6 +1,14 @@
-use std::time::Duration;
-use reqwest::blocking::Client;
-use serde::{Deserialize, Serialize};
+use error_chain::error_chain;
+use std::io::Read;
+use serde::Deserialize;
+
+error_chain! {
+    foreign_links {
+        Io(std::io::Error);
+        HttpRequest(reqwest::Error);
+        Serde(::serde_json::Error); 
+    }
+}
 
 #[derive(Debug, Deserialize)]
 struct ActionsStatus {
@@ -12,44 +20,33 @@ struct WorkflowRun {
     status: String,
 }
 
-fn fetch_actions_status(url: &str) -> Result<String, reqwest::Error> {
-    let client = Client::new();
-    let response = client.get(url).send()?;
-    let status: ActionsStatus = response.json()?;
+fn main() -> Result<()> {
+    let owner = "stuartthompson";
+    let repo = "table-format";
+    let workflow_id = "ci.yml";
 
-    // Get the status of the latest workflow run
-    if let Some(run) = status.workflow_runs.first() {
-        Ok(run.status.clone())
-    } else {
-        Err(reqwest::Error::from("No workflow runs found"))
-    }
-}
+    let url = format!(
+        "https://api.github.com/repos/{}/{}/actions/workflows/{}/runs",
+        owner, repo, workflow_id
+    );
 
-fn generate_output(status: &str) -> String {
-    match status {
-        "completed" => "<span foreground=\"#00ff00\">✓</span>".to_string(),
-        "in_progress" => "<span foreground=\"#d38b0d\">◷</span>".to_string(),
-        _ => "<span foreground=\"#ff0000\">✗</span>".to_string()
-    }
-}
+    let client = reqwest::blocking::Client::new();
+    let mut response = client.get(url)
+        .header("User-Agent", "request")
+        .send()?;
+    let mut body = String::new();
+    response.read_to_string(&mut body)?;
 
-fn main() {
-    let args: Vec<String> = std::env::args().collect();
-    if args.len() == 1 {
-        panic!("At least one argument required.");
-    }
-    let url = &args[1];
-    let update_interval = Duration::from_secs(60);
+    let actions_status: ActionsStatus = serde_json::from_str(&body)?;
 
-    loop {
-        match fetch_actions_status(url) {
-            Ok(status) => {
-                let output = generate_output(&status);
-                println!("{}", output);
-            },
-            Err(err) => eprintln!("Error: {}", err),
-        }
-        std::thread::sleep(update_interval);
-    }
+    println!("Status: {}", actions_status.workflow_runs[0].status);
+
+    // println!("Response: {}", body);
+    //println!("Total Workflow Runs: {}", response.total_count);
+    // for run in response.workflow_runs {
+    //    println!("ID: {}, Status: {}, Conclusion: {:?}", run.id, run.status, run.conclusion);
+    // }
+
+    Ok(())
 }
 
